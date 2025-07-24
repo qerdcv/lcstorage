@@ -10,9 +10,9 @@ function App() {
     <>
       <Header />
       <Routes>
-        <Route path='/' element={<HomePage />} />
-        <Route path='/add' element={<AddPage />} />
-        <Route path='/cards/:id' element={<CardDetailsPage />} />
+        <Route path='/lcstorage/' element={<HomePage />} />
+        <Route path='/lcstorage/add' element={<AddPage />} />
+        <Route path='/lcstorage/cards/:id' element={<CardDetailsPage />} />
       </Routes>
       <Footer />
     </>
