@@ -6,6 +6,35 @@ import {
 } from "html5-qrcode";
 import { CircleOff } from 'lucide-react';
 import db from '@/db';
+import type { QrcodeResultFormat } from 'html5-qrcode/esm/core';
+
+function mapBarcodeFormat(resultFormat: QrcodeResultFormat | undefined): string {
+  if (!resultFormat) return "CODE128";
+
+  switch (resultFormat.format) {
+    case Html5QrcodeSupportedFormats.QR_CODE:
+      return "QRCODE";
+    case Html5QrcodeSupportedFormats.CODE_39:
+      return "CODE39";
+    case Html5QrcodeSupportedFormats.CODE_93:
+      return "CODE93";
+    case Html5QrcodeSupportedFormats.CODE_128:
+      return "CODE128";
+    case Html5QrcodeSupportedFormats.EAN_13:
+      return "EAN13";
+    case Html5QrcodeSupportedFormats.EAN_8:
+      return "EAN8";
+    case Html5QrcodeSupportedFormats.UPC_A:
+    case Html5QrcodeSupportedFormats.UPC_E:
+      return "UPC";
+    case Html5QrcodeSupportedFormats.ITF:
+      return "ITF";
+    case Html5QrcodeSupportedFormats.CODABAR:
+      return "CODABAR";
+    default:
+      return "CODE128";
+  }
+}
 
 export default function AddCardForm() {
   const navigate = useNavigate();
@@ -23,11 +52,14 @@ export default function AddCardForm() {
     const scanner = new Html5Qrcode(regionId, {
       formatsToSupport: [
         Html5QrcodeSupportedFormats.QR_CODE,
-        Html5QrcodeSupportedFormats.CODE_128,
         Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.CODE_93,
+        Html5QrcodeSupportedFormats.CODE_128,
         Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
         Html5QrcodeSupportedFormats.UPC_A,
         Html5QrcodeSupportedFormats.ITF,
+        Html5QrcodeSupportedFormats.CODABAR,
       ],
       verbose: false,
     });
@@ -36,10 +68,11 @@ export default function AddCardForm() {
     scanner
       .start(
         { facingMode: "environment" },
-        { fps: undefined, },
+        { fps: 25, qrbox: { width: 250, height: 250 } },
         (decodedText, decodedResult) => {
+          const newFormat = mapBarcodeFormat(decodedResult.result?.format);
+          console.log("Scanned format:", newFormat, decodedText);
           setCode(decodedText);
-          const newFormat = decodedResult.result?.format?.formatName.toUpperCase().replace("_", "") || "CODE128";
           setFormat(newFormat);
           handleCloseScanner(); // Close properly
         },

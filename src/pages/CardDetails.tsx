@@ -7,15 +7,19 @@ import JsBarcode from 'jsbarcode';
 
 function Barcode({ value, codeFormat }: { value: string, codeFormat: string }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  console.log(codeFormat);
+  let width = 3;
+  if (value.length > 10 && value.length <= 16) {
+    width = 2;
+  } else if (value.length > 16) {
+    width = 1;
+  }
   useEffect(() => {
     if (svgRef.current) {
       JsBarcode(svgRef.current, value, {
+        width,
         format: codeFormat,
         displayValue: true,
         fontSize: 16,
-        height: 100,
-        margin: 10,
       });
     }
   }, [value]);
