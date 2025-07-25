@@ -36,13 +36,12 @@ export default function AddCardForm() {
     scanner
       .start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
+        { fps: undefined, },
         (decodedText, decodedResult) => {
           setCode(decodedText);
           const newFormat = decodedResult.result?.format?.formatName.toUpperCase().replace("_", "") || "CODE128";
           setFormat(newFormat);
           handleCloseScanner(); // Close properly
-          navigator.vibrate(200); // Optional: Vibrate on successful scan
         },
         (_: any) => { },
       )
