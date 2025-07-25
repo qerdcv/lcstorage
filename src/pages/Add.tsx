@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from 'react-router';
 import {
   Html5Qrcode,
   Html5QrcodeSupportedFormats,
@@ -7,6 +8,7 @@ import { CircleOff } from 'lucide-react';
 import db from '@/db';
 
 export default function AddCardForm() {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("CODE128");
@@ -26,7 +28,6 @@ export default function AddCardForm() {
         Html5QrcodeSupportedFormats.EAN_13,
         Html5QrcodeSupportedFormats.UPC_A,
         Html5QrcodeSupportedFormats.ITF,
-        // Pharmacode
       ],
       verbose: false,
     });
@@ -38,10 +39,12 @@ export default function AddCardForm() {
         { fps: 10, qrbox: 250 },
         (decodedText, decodedResult) => {
           setCode(decodedText);
-          setFormat(decodedResult.result?.format?.formatName.toUpperCase().replace("_", "") || format);
+          const newFormat = decodedResult.result?.format?.formatName.toUpperCase().replace("_", "") || "CODE128";
+          setFormat(newFormat);
           handleCloseScanner(); // Close properly
+          navigator.vibrate(200); // Optional: Vibrate on successful scan
         },
-        console.error,
+        (_: any) => { },
       )
       .catch(console.error);
 
@@ -58,7 +61,6 @@ export default function AddCardForm() {
     };
   }, [showScanner]);
 
-  // Handles scanner shutdown + UI update
   const handleCloseScanner = async () => {
     const scanner = scannerRef.current;
     if (scanner) {
@@ -69,7 +71,7 @@ export default function AddCardForm() {
         console.error("Failed to stop scanner:", err);
       } finally {
         scannerRef.current = null;
-        setShowScanner(false); // Only after clean shutdown
+        setShowScanner(false);
       }
     } else {
       setShowScanner(false);
@@ -79,6 +81,7 @@ export default function AddCardForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await db.addCard({ name, code, format: format })
+    navigate("/");
   };
 
   return (

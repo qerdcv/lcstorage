@@ -7,7 +7,7 @@ import JsBarcode from 'jsbarcode';
 
 function Barcode({ value, codeFormat }: { value: string, codeFormat: string }) {
   const svgRef = useRef<SVGSVGElement>(null);
-
+  console.log(codeFormat);
   useEffect(() => {
     if (svgRef.current) {
       JsBarcode(svgRef.current, value, {
