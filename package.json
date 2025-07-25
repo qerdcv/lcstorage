@@ -10,9 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.6",
     "html5-qrcode": "^2.3.8",
     "idb": "^8.0.3",
     "jsbarcode": "^3.12.1",
+    "lucide-react": "^0.525.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

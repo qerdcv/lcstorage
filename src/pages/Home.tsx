@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router';
 import db from '@/db';
-import type { Card } from '@models/card';
+import type { ICard } from '@models/card';
+import Card from '@components/Card';
+import { Plus } from 'lucide-react';
 
-
-function HomePage() {
-  const [cards, setCards] = React.useState<Card[]>([]);
+export default function HomePage() {
+  const [cards, setCards] = React.useState<ICard[]>([]);
   const handleDelete = async (id: number) => {
     await db.deleteCard(id);
     setCards(cards.filter(card => card.id !== id));
@@ -21,23 +22,28 @@ function HomePage() {
   return (
     <>
       {cards.length > 0 ? (
-        <ul>
-          {cards.map(card => (
-            <li>
-              <Link to={`/cards/${card.id}`} key={card.id}>
-                <strong>{card.name}</strong>&nbsp;
-              </Link>
-              <button onClick={() => handleDelete(card.id)}>Delete</button>
-            </li>
-
-          ))}
-        </ul>
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {cards.map((card) => (
+              <Card
+                key={card.id}
+                id={card.id}
+                name={card.name}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        </div>
       ) : (
-        <p>No cards available. Please add some.</p>
+        <p>No cards available</p>
       )}
-      <Link to='/add'>Add Card</Link >
+      <Link
+        to="/add"
+        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition"
+        aria-label="Add new card"
+      >
+        <Plus size={24} />
+      </Link>
     </>
   )
 }
-
-export default HomePage;

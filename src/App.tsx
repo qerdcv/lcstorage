@@ -1,4 +1,3 @@
-import Footer from '@components/Footer';
 import Header from '@components/Header';
 import AddPage from '@pages/Add';
 import CardDetailsPage from '@pages/CardDetails';
@@ -14,7 +13,6 @@ function App() {
         <Route path='/add' element={<AddPage />} />
         <Route path='/cards/:id' element={<CardDetailsPage />} />
       </Routes>
-      <Footer />
     </>
   )
 }

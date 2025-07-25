@@ -1,4 +1,4 @@
-import type { Card } from "@models/card";
+import type { ICard } from "@models/card";
 import { openDB } from "idb";
 
 const DB_NAME = "lcstorage";
@@ -22,12 +22,12 @@ export async function addCard(card: {
   return dbInstance.add(STORE_NAME, card);
 }
 
-export async function getCards(): Promise<Card[]> {
+export async function getCards(): Promise<ICard[]> {
   const dbInstance = await db;
   return dbInstance.getAll(STORE_NAME);
 }
 
-export async function getCard(id: number): Promise<Card | undefined> {
+export async function getCard(id: number): Promise<ICard | undefined> {
   const dbInstance = await db;
   return dbInstance.get(STORE_NAME, id);
 }

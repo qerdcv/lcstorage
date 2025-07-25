@@ -1,117 +1,140 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router';
-import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeResult } from "html5-qrcode";
+import { useState, useEffect, useRef } from "react";
+import {
+  Html5Qrcode,
+  Html5QrcodeSupportedFormats,
+} from "html5-qrcode";
+import { CircleOff } from 'lucide-react';
+import db from '@/db';
 
-import DB from '@/db';
-
-export default function AddPage() {
-  const navigate = useNavigate();
+export default function AddCardForm() {
+  const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [format, setFormat] = useState<string | undefined>(undefined);
-  const codeInputRef = useRef<HTMLInputElement>(null);
-  const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
-  const [scannerVisible, setScannerVisible] = useState(false);
+  const [format, setFormat] = useState("CODE128");
+  const [showScanner, setShowScanner] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const regionId = "qr-reader";
 
-  const startScanner = () => {
-    if (html5QrcodeRef.current) return; // already started
+  // Start the scanner
+  useEffect(() => {
+    if (!showScanner) return;
 
-    setScannerVisible(true);
-
-    // The ID of the element where the camera feed will be rendered
-    const qrCodeRegionId = "reader";
-
-    // Create instance
-    html5QrcodeRef.current = new Html5Qrcode(qrCodeRegionId, {
+    const scanner = new Html5Qrcode(regionId, {
       formatsToSupport: [
         Html5QrcodeSupportedFormats.QR_CODE,
         Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.ITF,
+        // Pharmacode
       ],
       verbose: false,
     });
+    scannerRef.current = scanner;
 
-    html5QrcodeRef.current
+    scanner
       .start(
-        { facingMode: "environment" }, // camera config
-        {
-          fps: 10,
-          qrbox: 250,
-        },
-        (decodedText, result: Html5QrcodeResult) => {
-          console.log("QR Code scanned:", decodedText);
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        (decodedText, decodedResult) => {
           setCode(decodedText);
-          setFormat(result.result.format?.formatName);
-          if (codeInputRef.current) {
-            codeInputRef.current.value = decodedText;
-          }
-          stopScanner();
+          setFormat(decodedResult.result?.format?.formatName.toUpperCase().replace("_", "") || format);
+          handleCloseScanner(); // Close properly
         },
-        (errorMessage) => {
-          console.warn("QR Code scan error:", errorMessage);
-        }
+        console.error,
       )
-      .catch((err) => {
-        console.error("Unable to start scanning:", err);
-        setScannerVisible(false);
-      });
+      .catch(console.error);
+
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current
+          .stop()
+          .then(() => scannerRef.current?.clear())
+          .catch(console.error)
+          .finally(() => {
+            scannerRef.current = null;
+          });
+      }
+    };
+  }, [showScanner]);
+
+  // Handles scanner shutdown + UI update
+  const handleCloseScanner = async () => {
+    const scanner = scannerRef.current;
+    if (scanner) {
+      try {
+        await scanner.stop();
+        scanner.clear();
+      } catch (err) {
+        console.error("Failed to stop scanner:", err);
+      } finally {
+        scannerRef.current = null;
+        setShowScanner(false); // Only after clean shutdown
+      }
+    } else {
+      setShowScanner(false);
+    }
   };
 
-  const stopScanner = () => {
-    if (!html5QrcodeRef.current) return;
-
-    html5QrcodeRef.current
-      .stop()
-      .then(() => {
-        html5QrcodeRef.current?.clear();
-        html5QrcodeRef.current = null;
-        setScannerVisible(false);
-      })
-      .catch((err) => {
-        console.error("Failed to stop scanning:", err);
-      });
-  };
-
-  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const name = (form.elements.namedItem("name") as HTMLInputElement)?.value;
-    const formCode = (form.elements.namedItem("code") as HTMLInputElement)?.value || code;
-    await DB.addCard({ name, format: format || "code_128", code: formCode });
-    navigate("/");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await db.addCard({ name, code, format: format })
   };
 
   return (
-    <div>
-      <form onSubmit={onSubmit}>
-        <label htmlFor="name">Card Name:</label>
-        <input type="text" id="name" name="name" required />
-
-        <label htmlFor="code">Card Code:</label>
+    <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4 space-y-4">
+      <div>
+        <label className="block font-semibold mb-1">Card Name</label>
         <input
           type="text"
-          id="code"
-          name="code"
+          value={name}
           required
-          ref={codeInputRef}
-          defaultValue={code}
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded"
         />
+      </div>
 
-        <button type="submit">Add Card</button>
-      </form>
+      <div>
+        <label className="block font-semibold mb-1">Card Code</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={code}
+            required
+            onChange={(e) => setCode(e.target.value)}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded"
+          />
+          <button
+            type="button"
+            onClick={() => setShowScanner(true)}
+            className="px-4 py-2 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200"
+          >
+            Scan
+          </button>
+        </div>
+      </div>
 
-      {!scannerVisible && (
-        <button onClick={startScanner} style={{ marginTop: "20px" }}>
-          Scan QR Code
-        </button>
+      <button
+        type="submit"
+        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+      >
+        Add Card
+      </button>
+
+      {showScanner && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded shadow-md relative">
+            <button
+              type="button"
+              onClick={handleCloseScanner}
+              className="absolute top-1 right-2 text-xl"
+            >
+              <CircleOff size={24} className="text-gray-600" />
+            </button>
+            <div id={regionId} className="w-[300px] h-[300px]" />
+          </div>
+        </div>
       )}
-
-      <div id="reader" style={{ width: "300px", marginTop: "20px" }}></div>
-
-      {scannerVisible && (
-        <button onClick={stopScanner} style={{ marginTop: "10px" }}>
-          Stop Scanner
-        </button>
-      )}
-    </div>
+    </form>
   );
 }
